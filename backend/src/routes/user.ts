@@ -1,7 +1,8 @@
 import { Hono } from "hono";
-import { sign } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
 import { PrismaClient } from '@prisma/client/edge';
 import { withAccelerate } from '@prisma/extension-accelerate';
+import { isValidEmail, isValidPassword } from "../util";
 
 export const user = new Hono<{
     Bindings: {
@@ -20,6 +21,14 @@ user.post('/signup', async (c) => {
                 password: string
             }
         } = await c.req.json();
+
+        if(!isValidEmail(body.data.email) || !isValidPassword(body.data.password)) {
+            c.status(200);
+            c.json({
+                msg: 'invalid credential'
+            });
+            return;
+        }
 
         const user_client = new PrismaClient({
             datasourceUrl: c.env.DATABASE_URL
@@ -93,4 +102,20 @@ user.post('/signin', async (c) => {
             error: "encounted some error!",
         }, 501);
     }
+});
+
+user.get('/', async c => {
+    const auth = c.req.header('Authorization');
+    if(!auth) {
+        return c.json({
+            error: 'Unauthorised user'
+        })
+    };
+    const token = auth.split(' ')[1];
+
+    verify(token, c.env.JWT_SECRET).catch(() => {
+        throw new Error("unauthorized user");
+    });
+
+    return c.html('<h1> Hello world </h1>');
 })

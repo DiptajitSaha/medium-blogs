@@ -69,16 +69,14 @@ blog.post('/', async (c) => {
 // edit blogs
 blog.put('/', async (c) => {
     try {
-        const Authorization = c.req.header('authorization');
-        const token = Authorization?.split(' ')[1];
-        if (token) {
-            verify(token, c.env.JWT_SECRET).catch(() => {
-                throw new Error("unauthorized user");
-            });
-        }
-        else {
+        const auth = c.req.header('Authorization');
+        const token = auth?.split(' ')[1];
+        if (!token) {
             throw new Error("unauthorized user");
         }
+        verify(token, c.env.JWT_SECRET).catch(() => {
+            throw new Error("unauthorized user");
+        });
 
         const body = await c.req.json();
         const update: {
@@ -126,17 +124,15 @@ blog.put('/', async (c) => {
 //get every blog
 blog.get('/bulk', async (c) => {
     try {
-        const Authorization = c.req.header('authorization');
-        const token = Authorization?.split(' ')[1];
-        if (token) {
-            verify(token, c.env.JWT_SECRET).catch(() => {
-                throw new Error("unauthorized user");
-            });
-        }
-        else {
+        const auth = c.req.header('Authorization');
+        const token = auth?.split(' ')[1];
+        if (!token) {
             throw new Error("unauthorized user");
         }
-        
+        verify(token, c.env.JWT_SECRET).catch(() => {
+            throw new Error("unauthorized user");
+        });
+
         const blog_client = new PrismaClient({
             datasourceUrl: c.env.DATABASE_URL
         }).$extends(withAccelerate()).blog;
